@@ -28,7 +28,14 @@ void listFiles(const char *dirname) {
 
 int main(int argc, char* argv[]) {
     
-    listFiles("/home/antonia/Desktop/poo");
+    if (argc < 2) {
+        printf("Usage: %s <directory>\n", argv[0]);
+        return 1;
+    }
+
+    const char *path = argv[1];
+
+    listFiles(path);
 
     return 0;
 }
