@@ -9,6 +9,8 @@
 #include <time.h>
 #include <fcntl.h>
 
+#define MAX_ARGS 10
+
 struct metadata {
     char name[NAME_MAX];
     off_t size;
@@ -47,8 +49,7 @@ void write_metadata(const char *filename, struct metadata *meta) {
     }
 }
 
-
-void create_snapshot(const char *dirname) {
+void create_snapshot(const char *dirname, const char *output_dir) {
     DIR *dir = opendir(dirname);
     if (dir == NULL) {
         printf("Error at opening directory\n");
@@ -64,40 +65,54 @@ void create_snapshot(const char *dirname) {
         char path[PATH_MAX];
         snprintf(path, sizeof(path), "%s/%s", dirname, entity->d_name);
 
-        struct metadata meta;
-        get_metadata(path, &meta);
-
-        char snapshot_filename[PATH_MAX];
-        time_t now = time(NULL);
-        struct tm *local_time = localtime(&now);
-        strftime(snapshot_filename, sizeof(snapshot_filename), "%d.%m.%Y_%H:%M:%S_snapshot.txt", local_time);
+        struct metadata current_meta;
+        get_metadata(path, &current_meta);
 
         char snapshot_filepath[PATH_MAX * 2]; 
-        snprintf(snapshot_filepath, sizeof(snapshot_filepath), "%s/%s_%s", dirname, entity->d_name, snapshot_filename);
+        snprintf(snapshot_filepath, sizeof(snapshot_filepath), "%s/%s_snapshot", output_dir, entity->d_name);
 
-        write_metadata(snapshot_filepath, &meta);
-
-       
-        struct stat st;
-        if (stat(path, &st) == 0) {
-            if (S_ISDIR(st.st_mode)) {
-                create_snapshot(path);
+        struct metadata old_meta;
+        char old_snapshot_filepath[PATH_MAX * 2];
+        snprintf(old_snapshot_filepath, sizeof(old_snapshot_filepath), "%s_snapshot", path);
+        if (access(old_snapshot_filepath, F_OK) != -1) { 
+            get_metadata(old_snapshot_filepath, &old_meta);
+            if (memcmp(&current_meta, &old_meta, sizeof(struct metadata)) == 0) {
+                continue;
             }
-        }else {
-            printf(" (Error getting information)\n");
+        }
+
+        write_metadata(snapshot_filepath, &current_meta);
+
+        struct stat st;
+        if (stat(path, &st) == 0){
+            if(S_ISDIR(st.st_mode)) {
+                create_snapshot(path, output_dir);
+            }
+        } else {
+            printf("Error getting information from: %s\n", path);
         }
     }
 
     closedir(dir);
 }
 
-int main(int argc, char **argv) {
-    if (argc < 2) {
-        printf("Not enough arguments.\n");
-        return 1;
+void snapshotDirectories(int argc, char **argv){
+    if (argc < 4 || argc > MAX_ARGS || strcmp(argv[1], "-o") != 0) {
+        perror("./program_exe -o output input1 input2 ...");
+        exit(EXIT_FAILURE);
     }
 
-    create_snapshot(argv[1]);
+    char *output_path = argv[2];
+    mkdir(output_path, S_IRWXU | S_IRWXG | S_IRWXO);
+    for (int i = 3; i < argc; i++) {
+        char *input_path = argv[i];
+        create_snapshot(input_path, output_path);
+    }
+}
+
+int main(int argc, char **argv) {
+  
+    snapshotDirectories(argc, argv);
 
     return 0;
 }
