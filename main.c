@@ -8,6 +8,7 @@
 #include <linux/limits.h>
 #include <time.h>
 #include <fcntl.h>
+#include <sys/wait.h>
 
 #define MAX_ARGS 10
 
@@ -110,9 +111,43 @@ void snapshotDirectories(int argc, char **argv){
     }
 }
 
+void processesDirectories(int argc, char **argv)
+{
+    int status;
+    pid_t pid;
+
+    if (argc < 4 || argc > MAX_ARGS || strcmp(argv[1], "-o") != 0){
+        perror("./program_exe -o output input1 input2 ...");
+        exit(EXIT_FAILURE);
+    }
+
+    char *output_path = argv[2];
+    mkdir(output_path, S_IRWXU | S_IRWXG | S_IRWXO);
+
+    for (int i = 3; i < argc; i++) {
+        if ((pid = fork()) < 0) {
+            perror("Error forking");
+            exit(EXIT_FAILURE);
+        } else if (pid == 0) {
+            create_snapshot(argv[i], output_path);
+            printf("Snapshot for directory %s created successfully\n", argv[i]);
+            exit(EXIT_SUCCESS);
+        }
+    }
+
+    for (int i = 3; i < argc; i++) {
+        pid_t child_pid = wait(&status);
+        if (WIFEXITED(status)) {
+            printf("Child process with PID %d exited with status %d\n", child_pid, WEXITSTATUS(status));
+        }
+    }
+}
+
 int main(int argc, char **argv) {
   
-    snapshotDirectories(argc, argv);
+    //snapshotDirectories(argc, argv);
+
+    processesDirectories(argc, argv);
 
     return 0;
 }
