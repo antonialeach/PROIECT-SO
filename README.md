@@ -9,5 +9,5 @@ Features
 
     Snapshot Creation: Recursively scans directories and creates snapshots of files, capturing metadata such as name, size, permissions and timestamps.
     Malicious Content Analysis: Checks files for malicious content using the provided verify_for_malicious.sh script.
-    Quarantine Functionality: Moves suspicious files to a designated quarantine directory for further investigation.
+    Quarantine Functionality: Moves suspicious files to a designated quarantine directory.
     Parallel Processing: Utilizes parallel processing to improve efficiency in handling large file systems.
