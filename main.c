@@ -10,7 +10,7 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 
-#define MAX_ARGS 10
+#define MAX_ARGS 14
 
 struct metadata {
     char name[NAME_MAX];
@@ -177,7 +177,7 @@ void create_snapshot(const char *dirname, const char *output_dir, const char *is
 
 
 void snapshot_directories(int argc, char **argv){ //Previous function that handles the directories from the command line
-    if (argc < 6 || argc > MAX_ARGS || strcmp(argv[1], "-o") != 0) {
+    if (argc < 6 || argc > MAX_ARGS || strcmp(argv[1], "-o") || strcmp(argv[3], "-s") != 0) {
         perror("./program_exe -o output -s isolated_space input1 input2 ...");
         exit(EXIT_FAILURE);
     }
@@ -196,7 +196,7 @@ void child_process_for_directory(int argc, char **argv)
     int status;
     pid_t pid;
 
-    if (argc < 6 || argc > MAX_ARGS || strcmp(argv[1], "-o") != 0){
+    if (argc < 6 || argc > MAX_ARGS || strcmp(argv[1], "-o") || strcmp(argv[3], "-s") != 0){
         perror("./program_exe -o output -s isolated_space input1 input2 ...");
         exit(EXIT_FAILURE);
     }
@@ -231,5 +231,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-
-
